@@ -1,0 +1,55 @@
+
+**Project:** Tshepe Haulage (Kimberly) | **Scheme:** 10.25.0.0/16 | **Milestone 2**
+
+
+Enterprise uses private Class A 10.25.0.0/16 to allow 256 x /24 subnets.
+We use /24 per VLAN for simplicity and 254 hosts per VLAN - enough for growth.
+
+- Subnet Mask: 255.255.255.0 (/24)
+- Why /24: Easy troubleshooting, VLAN isolation, DHCP management
+
+
+
+| VLAN ID | Name | Network Address | Subnet Mask | Default Gateway (R1) | Broadcast | Usable Hosts | DHCP Excluded |
+|---|---|---|---|---|---|---|---|
+| 10 | STAFF | 10.25.10.0 | 255.255.255.0 | 10.25.10.1 | 10.25.10.255 | 10.25.10.2-254 | .1 - .10 |
+| 20 | GUEST | 10.25.20.0 | 255.255.255.0 | 10.25.20.1 | 10.25.20.255 | 10.25.20.2-254 | .1 - .10 |
+| 30 | SERVER | 10.25.30.0 | 255.255.255.0 | 10.25.30.1 | 10.25.30.255 | 10.25.30.2-254 | .1 - .10 |
+| 40 | MANAGEMENT | 10.25.40.0 | 255.255.255.0 | 10.25.40.1 | 10.25.40.255 | 10.25.40.2-254 | .1 - .10 |
+
+
+
+R1 G0/0 is trunked to SW1:
+
+- G0/0.10 -> VLAN 10 -> encapsulation dot1Q 10 -> ip 10.25.10.1/24
+- G0/0.20 -> VLAN 20 -> encapsulation dot1Q 20 -> ip 10.25.20.1/24 + ACL 100 IN
+- G0/0.30 -> VLAN 30 -> encapsulation dot1Q 30 -> ip 10.25.30.1/24
+- G0/0.40 -> VLAN 40 -> encapsulation dot1Q 40 -> ip 10.25.40.1/24
+
+All sub-ifs: 
+
+
+
+- ISP Link: 203.0.113.0/30
+- R1 G0/1: 203.0.113.2/30 (NAT outside)
+- ISP Router: 203.0.113.1/30
+- NAT: `access-list 10 permit 10.25.0.0 0.0.255.255` + `ip nat inside source list 10 interface G0/1 overload`
+- Default Route: `ip route 0.0.0.0 0.0.0.0 203.0.113.1`
+
+
+
+| Device | Interface | VLAN | IP Address | Type |
+|---|---|---|---|---|
+| R1-Tshepe | G0/0.10 | 10 | 10.25.10.1 | Gateway |
+| R1-Tshepe | G0/0.20 | 20 | 10.25.20.1 | Gateway + ACL |
+| R1-Tshepe | G0/0.30 | 30 | 10.25.30.1 | Gateway |
+| R1-Tshepe | G0/0.40 | 40 | 10.25.40.1 | Gateway |
+| R1-Tshepe | G0/1 | WAN | 203.0.113.2/30 | WAN |
+| SW1 | VLAN 40 | 40 | 10.25.40.2 | Management |
+| SW2 | VLAN 40 | 40 | 10.25.40.3 | Management |
+| SW3 | VLAN 40 | 40 | 10.25.40.4 | Management |
+| PC-STAFF | DHCP | 10 | 10.25.10.11+ | DHCP Client |
+| PC-GUEST | DHCP | 20 | 10.25.20.11+ | DHCP Client |
+| Server | Static | 30 | 10.25.30.10 | Static |
+
+
