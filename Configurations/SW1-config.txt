@@ -1,12 +1,12 @@
 hostname SW1-Tshepe
 vlan 10
- name Management
+ name Staff
 vlan 20
- name Sales
+ name Guest
 vlan 30
- name Server-Farm
+ name Server
 vlan 40
- name Logistics
+ name Management
 interface FastEthernet0/1
  switchport mode access
  switchport access vlan 10
